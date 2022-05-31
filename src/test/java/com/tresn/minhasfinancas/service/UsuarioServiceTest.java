@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -23,11 +24,30 @@ public class UsuarioServiceTest {
 	@MockBean
 	UsuarioRepository usuarioRepository;
 	
-	UsuarioService usuarioService;
+	@SpyBean
+	UsuarioServiceImpl usuarioServiceImpl;
 	
-	@Before
-	public void setUp() {
-		usuarioService = new UsuarioServiceImpl(usuarioRepository);
+		
+	@Test
+	public void deveSalvarUmUsuario() {
+		// cenario
+		Mockito.doNothing().when(usuarioServiceImpl).validarEmail(Mockito.anyString());
+		
+		Usuario usuario = Usuario.builder().id(1l).nome("nome").email("email@email.com").senha("senha").build();
+		
+		Mockito.when(usuarioRepository.save(Mockito.any(Usuario.class))).thenReturn(usuario);
+		
+		// ação ou execução
+		Usuario usuarioSalvo = usuarioServiceImpl.salvarUsuario(new Usuario());
+		
+		
+		// verificação
+		Assertions.assertThat(usuarioSalvo).isNotNull();
+		Assertions.assertThat(usuarioSalvo.getId()).isEqualTo(1l);
+		Assertions.assertThat(usuarioSalvo.getNome()).isEqualTo("nome");
+		Assertions.assertThat(usuarioSalvo.getEmail()).isEqualTo("email@email.com");
+		Assertions.assertThat(usuarioSalvo.getSenha()).isEqualTo("senha");
+		
 	}
 	
 	@Test(expected = Test.None.class)
@@ -42,7 +62,7 @@ public class UsuarioServiceTest {
 		Mockito.when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuario));
 		
 		// ação ou execução
-		Usuario result = usuarioService.autenticar(email, senha);
+		Usuario result = usuarioServiceImpl.autenticar(email, senha);
 		
 		// verificação
 		Assertions.assertThat(result).isNotNull();
@@ -55,7 +75,7 @@ public class UsuarioServiceTest {
 		Mockito.when(usuarioRepository.findByEmail(Mockito.anyString())).thenReturn(Optional.empty());
 		
 		// ação ou execução
-		Throwable exception = Assertions.catchThrowable ( () -> usuarioService.autenticar("email@email.com", "senha"));
+		Throwable exception = Assertions.catchThrowable ( () -> usuarioServiceImpl.autenticar("email@email.com", "senha"));
 		
 		// verificação
 		Assertions.assertThat(exception).isInstanceOf(ErroAutenticacaoException.class).hasMessage("Usuário não encontrado.");
@@ -72,7 +92,7 @@ public class UsuarioServiceTest {
 		Mockito.when(usuarioRepository.findByEmail(Mockito.anyString())).thenReturn(Optional.of(usuario));
 		
 		// ação ou execução
-		Throwable exception = Assertions.catchThrowable ( () -> usuarioService.autenticar("email@email.com", "senha-errada"));
+		Throwable exception = Assertions.catchThrowable ( () -> usuarioServiceImpl.autenticar("email@email.com", "senha-errada"));
 		
 		// verificação
 		Assertions.assertThat(exception).isInstanceOf(ErroAutenticacaoException.class).hasMessage("Senha inválida.");
@@ -86,7 +106,7 @@ public class UsuarioServiceTest {
 		Mockito.when(usuarioRepository.existsByEmail(Mockito.anyString())).thenReturn(false);
 		
 		// ação ou execução
-		usuarioService.validarEmail("3nelsonjunior@gmail.com");
+		usuarioServiceImpl.validarEmail("3nelsonjunior@gmail.com");
 		
 		// verificação
 		//não se aplica, pois esta verificando se vai lançar exeção
@@ -100,7 +120,7 @@ public class UsuarioServiceTest {
 		
 		
 		// ação ou execução
-		usuarioService.validarEmail("3nelsonjunior@gmail.com");
+		usuarioServiceImpl.validarEmail("3nelsonjunior@gmail.com");
 		
 		// verificação
 		//não se aplica, pois esta verificando se vai lançar exeção
